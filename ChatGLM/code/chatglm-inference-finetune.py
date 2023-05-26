@@ -23,17 +23,24 @@ import torch
 from transformers import AutoTokenizer, AutoModel, AutoConfig
 
 
-os.system("pwd")
-os.system("ls -l")
-os.system("ls -l ./code")
-os.system("cp ./code/s5cmd  /tmp/ && chmod +x /tmp/s5cmd")
-model_name_or_path="s3://sagemaker-us-west-2-928808346782/llm/models/chatglm/ptune-adgen/adgen-chatglm-6b-ft/"
-pretrained_model_path = "/tmp/orignal/"
-os.system("/tmp/s5cmd sync {0} {1}".format(model_name_or_path+"*", pretrained_model_path))
-os.system("ls -l /tmp/orignal/")
-# tokenizer = AutoTokenizer.from_pretrained(pretrained_model_path, trust_remote_code=True)
+model_name_or_path = os.getenv("MODEL_NAME_OR_PATH", "THUDM/chatglm-6b")
+pre_seq_len = int(os.getenv("PRE_SEQ_LEN", 128))
+finetune_model_name_or_path = os.getenv("FINETUNE_MODEL_NAME_OR_PATH", "checkpoint-50/pytorch_model.bin")
 
-tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
+
+print("model_name_or_path:{}".format(model_name_or_path))
+print("pre_seq_len:{}".format(pre_seq_len))
+print("finetune_model_name_or_path:{}".format(finetune_model_name_or_path))
+
+if "s3" in model_name_or_path:
+    print("#" * 10)
+    os.system("cp ./code/s5cmd  /tmp/ && chmod +x /tmp/s5cmd")
+    os.system("/tmp/s5cmd sync {0} {1}".format(model_name_or_path + "*", "/tmp/orignal/"))
+    model_name_or_path = "/tmp/orignal/"
+print("model_name_or_path:{}".format(model_name_or_path))
+
+tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+# tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
 
 
 def preprocess(text):
@@ -58,15 +65,30 @@ def model_fn(model_dir):
 
     """
     print("=================model_fn_Start=================")
-    config = AutoConfig.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True, pre_seq_len=128)
-    model = AutoModel.from_pretrained("THUDM/chatglm-6b", config=config, trust_remote_code=True)
-    # model = AutoModel.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
-    prefix_state_dict = torch.load("/tmp/orignal/checkpoint-50/pytorch_model.bin")
+    
+    pre_seq_len = int(os.getenv("PRE_SEQ_LEN", 128))
+    finetune_model_name_or_path = os.getenv("FINETUNE_MODEL_NAME_OR_PATH", "checkpoint-50/pytorch_model.bin")
+    
+    print("model_name_or_path:{}".format(model_name_or_path))
+    print("pre_seq_len:{}".format(pre_seq_len))
+    print("finetune_model_name_or_path:{}".format(finetune_model_name_or_path))
+
+    config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True, pre_seq_len=pre_seq_len)
+    model = AutoModel.from_pretrained(model_name_or_path, config=config, trust_remote_code=True)
+
+    # finetune_model_name_or_path = os.path.join(model_name_or_path, finetune_model_name_or_path)
+    # print("finetune_model_name_or_path:{}".format(finetune_model_name_or_path))
+    os.system("/tmp/s5cmd sync {0} {1}".format(finetune_model_name_or_path, "/tmp/chatglm-finetune/"))
+    os.system("ls -l /tmp/chatglm-finetune/")
+    prefix_state_dict = torch.load("/tmp/chatglm-finetune/pytorch_model.bin")
+
+    print("*" * 50)
+
     new_prefix_state_dict = {}
     for k, v in prefix_state_dict.items():
         new_prefix_state_dict[k[len("transformer.prefix_encoder."):]] = v
     model.transformer.prefix_encoder.load_state_dict(new_prefix_state_dict)
-    
+
     model = model.quantize(4)
     model.half().cuda()
 

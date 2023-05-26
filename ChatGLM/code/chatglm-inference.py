@@ -32,7 +32,7 @@ def postprocess(text):
     return text.replace("\\n", "\n").replace("\\t", "\t")
 
 
-def answer(text, sample=True, top_p=0.45, temperature=0.7,model=None):
+def answer(text, sample=True, top_p=0.45, temperature=0.7, model=None):
     text = preprocess(text)
     response, history = model.chat(tokenizer, text, history=[])
 

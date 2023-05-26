@@ -28,19 +28,12 @@ pre_seq_len = int(os.getenv("PRE_SEQ_LEN", 128))
 finetune_model_name_or_path = os.getenv("FINETUNE_MODEL_NAME_OR_PATH", "checkpoint-50/pytorch_model.bin")
 
 
-print("model_name_or_path:{}".format(model_name_or_path))
-print("pre_seq_len:{}".format(pre_seq_len))
-print("finetune_model_name_or_path:{}".format(finetune_model_name_or_path))
-
 if "s3" in model_name_or_path:
-    print("#" * 10)
     os.system("cp ./code/s5cmd  /tmp/ && chmod +x /tmp/s5cmd")
     os.system("/tmp/s5cmd sync {0} {1}".format(model_name_or_path + "*", "/tmp/orignal/"))
     model_name_or_path = "/tmp/orignal/"
-print("model_name_or_path:{}".format(model_name_or_path))
 
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
-# tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b", trust_remote_code=True)
 
 
 def preprocess(text):
@@ -65,24 +58,16 @@ def model_fn(model_dir):
 
     """
     print("=================model_fn_Start=================")
-    
+
     pre_seq_len = int(os.getenv("PRE_SEQ_LEN", 128))
     finetune_model_name_or_path = os.getenv("FINETUNE_MODEL_NAME_OR_PATH", "checkpoint-50/pytorch_model.bin")
-    
-    print("model_name_or_path:{}".format(model_name_or_path))
-    print("pre_seq_len:{}".format(pre_seq_len))
-    print("finetune_model_name_or_path:{}".format(finetune_model_name_or_path))
 
     config = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True, pre_seq_len=pre_seq_len)
     model = AutoModel.from_pretrained(model_name_or_path, config=config, trust_remote_code=True)
 
-    # finetune_model_name_or_path = os.path.join(model_name_or_path, finetune_model_name_or_path)
-    # print("finetune_model_name_or_path:{}".format(finetune_model_name_or_path))
     os.system("/tmp/s5cmd sync {0} {1}".format(finetune_model_name_or_path, "/tmp/chatglm-finetune/"))
-    os.system("ls -l /tmp/chatglm-finetune/")
-    prefix_state_dict = torch.load("/tmp/chatglm-finetune/pytorch_model.bin")
 
-    print("*" * 50)
+    prefix_state_dict = torch.load("/tmp/chatglm-finetune/pytorch_model.bin")
 
     new_prefix_state_dict = {}
     for k, v in prefix_state_dict.items():

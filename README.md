@@ -2,13 +2,13 @@
 
 本实验将介绍如何在 [Amazon SageMaker](https://aws.amazon.com/cn/sagemaker/) 上进行 [ChatGLM](https://github.com/THUDM/ChatGLM-6B) 模型的微调，内容包括：
 
-1. 创建 SageMaker Notebook Instance.
-2. 使用两种方式实现 ChatGLM 模型的微调:
+1、创建 SageMaker Notebook Instance.
+2、使用两种方式实现 ChatGLM 模型的微调:
 
 - 通过 SageMaker Notebook
 
 - 通过 SageMaker Training Job
-
+3、将 Finetune 后的模型上传到您个人 [HuggingFace](https://huggingface.co/) 账号下
 ## 0. 前置准备工作
 
 1、首先注册 [AWS 海外账号](https://aws.amazon.com/cn/)，您需要有一张信用卡即可注册。

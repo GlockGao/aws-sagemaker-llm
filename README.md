@@ -13,7 +13,7 @@
 
 1、首先注册 [AWS 海外账号](https://aws.amazon.com/cn/)，您需要有一张信用卡即可注册。
 
-2、新账号默认有资源使用的限制，我们称为 service quota，您可以通过提工单的方式申请 GPU 资源，操作方式见该[手册](./service quota for chatglm .pdf)。
+2、新账号默认有资源使用的限制，我们称为 service quota，您可以通过提工单的方式申请 GPU 资源，操作方式见该[手册](./service%20quota%20for%20chatglm%20.pdf)。
 
 ## 1. 准备实验环境
 
